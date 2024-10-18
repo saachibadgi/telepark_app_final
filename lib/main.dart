@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'sign_in_page.dart'; // Import the SignInPage
 
-void main() {
-  runApp(const MyApp());
+
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();  // Initialize Firebase
+
+  runApp( MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -31,7 +38,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      // home: //SignInPage(), // const // MyHomePage(title: 'Flutter Demo Home Page'),
+        home:  const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
