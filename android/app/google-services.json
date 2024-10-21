@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "198694021520",
+    "project_id": "telepark-38530",
+    "storage_bucket": "telepark-38530.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:198694021520:android:4afa1fa576d8124fd6ab15",
+        "android_client_info": {
+          "package_name": "com.TelePark.telepark_app_final"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "198694021520-onds53j7ngt4lfc7fdh4dm3ur8p52l4m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC82RWw2K6I2BnbrwEJAhNvnsPgnP9WpHo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "198694021520-onds53j7ngt4lfc7fdh4dm3ur8p52l4m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

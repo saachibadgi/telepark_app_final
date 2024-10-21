@@ -2,6 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'sign_in_page.dart'; // Import the SignInPage
+import 'account_page.dart';  // Import your AccountPage file
+
+import 'package:firebase_core/firebase_core.dart';
+
+const firebaseConfig = {
+  'apiKey': "AIzaSyBnCEolq3OWLIcJp2uIJv5Xn8Qeh00aQSE",
+  'authDomain': "com.TelePark.telepark_app_final",
+  'projectId': "telepark-38530",
+  'storageBucket': "198694021520",
+  'messagingSenderId': "your-sender-id",
+  'appId': "1:198694021520:android:4afa1fa576d8124fd6ab15",
+  'measurementId': "your-measurement-id",
+};
 
 
 void main() async{
@@ -20,10 +33,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const AccountPage(),  // Set AccountPage as the home page
+      debugShowCheckedModeBanner: false,  // Remove the debug banner
+    );
+    /*MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
         // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
+        // "flutter run" has a purple toolbar. Then, without quitting the app,
         // try changing the seedColor in the colorScheme below to Colors.green
         // and then invoke "hot reload" (save your changes or press the "hot
         // reload" button in a Flutter-supported IDE, or press "r" if you used
@@ -40,7 +59,7 @@ class MyApp extends StatelessWidget {
       ),
       // home: //SignInPage(), // const // MyHomePage(title: 'Flutter Demo Home Page'),
         home:  const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+    );*/
   }
 }
 
