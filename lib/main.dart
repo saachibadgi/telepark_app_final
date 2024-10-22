@@ -18,8 +18,8 @@ const firebaseConfig = {
 
 
 void main() async{
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();  // Initialize Firebase
+  //WidgetsFlutterBinding.ensureInitialized();
+  //await Firebase.initializeApp();  // Initialize Firebase
 
   runApp( MyApp());
 }
