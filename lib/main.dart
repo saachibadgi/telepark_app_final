@@ -6,20 +6,15 @@ import 'account_page.dart';  // Import your AccountPage file
 
 import 'package:firebase_core/firebase_core.dart';
 
-const firebaseConfig = {
-  'apiKey': "AIzaSyBnCEolq3OWLIcJp2uIJv5Xn8Qeh00aQSE",
-  'authDomain': "com.TelePark.telepark_app_final",
-  'projectId': "telepark-38530",
-  'storageBucket': "198694021520",
-  'messagingSenderId': "your-sender-id",
-  'appId': "1:198694021520:android:4afa1fa576d8124fd6ab15",
-  'measurementId': "your-measurement-id",
-};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 
 void main() async{
-  //WidgetsFlutterBinding.ensureInitialized();
-  //await Firebase.initializeApp();  // Initialize Firebase
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();  // Initialize Firebase
 
   runApp( MyApp());
 }
