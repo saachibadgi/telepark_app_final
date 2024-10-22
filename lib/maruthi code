@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 void main() {
   runApp(MyApp());
@@ -21,56 +22,62 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  double carX = 50; // Starting x position of the car
-  double carY = 300; // Starting y position of the car
+  double carX = 150; // Starting x position of the car
+  double carY = 175; // Starting y position of the car
   double angle = 0;
   bool navigating = false;
   bool paymentPromptVisible = false;
+  String? destinationMessage = '';
 
   List<ParkingZone> parkingZones = [
-    ParkingZone(x: 80, y: 220, isAvailable: true),
-    ParkingZone(x: 150, y: 220, isAvailable: false),
-    ParkingZone(x: 220, y: 220, isAvailable: true),
-    ParkingZone(x: 80, y: 300, isAvailable: false),
-    ParkingZone(x: 150, y: 300, isAvailable: true),
+    ParkingZone(x: 100, y: 450, isAvailable: true),
+    ParkingZone(x: 200, y: 450, isAvailable: false),
+    ParkingZone(x: 300, y: 450, isAvailable: true),
+    ParkingZone(x: 400, y: 200, isAvailable: false),
+    ParkingZone(x: 500, y: 200, isAvailable: true),
   ];
 
-  List<String> locations = ['Downtown Boston', 'Back Bay', 'South End'];
-  String? selectedLocation;
+  String searchQuery = '';
+  String? selectedLocation = '';
 
   void startNavigation() {
     setState(() {
       navigating = true;
-      paymentPromptVisible = false;
+      destinationMessage = '';
     });
 
-    // Simulate movement to the parking spot over 10-20 seconds
-    Future.delayed(Duration(seconds: 2), () {
+    int step = 0;
+    Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
-        // Move the car to the right across the entire screen
-        carX = 350; // Move across the screen
-      });
+        if (step < 10) {
+          // Move down towards Chipotle
+          carY += 25; // Adjust the value based on how much movement you want per second
+        } else if (step < 15) {
+          // Move right towards Chipotle
+          carX += 90; // Adjust the value to simulate moving to the right
+        } else if (step < 20) {
+          // Move up to park above Chipotle
+          carY += 5; // Continue moving up
+        }
 
-      Future.delayed(Duration(seconds: 4), () {
-        setState(() {
-          // Move the car down to the parking spot
-          carX = 350; // Stay in the same x position
-          carY = 220; // Move down to the parking spot
-          angle = 0; // Reset angle
-        });
+        // End navigation after 20 seconds
+        if (step == 19) {
+          navigating = false;
+          destinationMessage = 'Location Reached!';
+          timer.cancel();
+        }
 
-        Future.delayed(Duration(seconds: 4), () {
-          setState(() {
-            navigating = false;
-            paymentPromptVisible = true;
-          });
-        });
+        // Prevent the car from going below the Y coordinate of the parking meters
+        if (carY < 200) {
+          carY = 200; // Stop at the height of parking meters
+        }
+
+        step++;
       });
     });
   }
 
   void payForParking() {
-    // Implement payment logic here
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -102,30 +109,20 @@ class _HomePageState extends State<HomePage> {
               ),
               onChanged: (value) {
                 setState(() {
-                  selectedLocation = value;
+                  searchQuery = value;
+                  selectedLocation = (value.toLowerCase().contains('chipotle')) ? "255 Main St, Cambridge, MA 02142" : null;
                 });
-              },
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => SimpleDialog(
-                    title: Text('Select a Location'),
-                    children: locations.map((location) {
-                      return SimpleDialogOption(
-                        onPressed: () {
-                          setState(() {
-                            selectedLocation = location;
-                          });
-                          Navigator.pop(context);
-                        },
-                        child: Text(location),
-                      );
-                    }).toList(),
-                  ),
-                );
               },
             ),
           ),
+          if (selectedLocation != null && !navigating)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: startNavigation,
+                child: Text('Start Navigation'),
+              ),
+            ),
           Expanded(
             child: Stack(
               children: [
@@ -134,26 +131,29 @@ class _HomePageState extends State<HomePage> {
                   painter: MapPainter(carX, carY, angle, parkingZones),
                 ),
                 Positioned(
-                  left: 150,
-                  top: 100,
-                  child: Text(
-                    'Downtown Boston',
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                  ),
+                  left: 350,
+                  top: 50,
+                  child: selectedLocation != null
+                      ? Column(
+                          children: [
+                            Text(
+                              'Chipotle: $selectedLocation',
+                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                            ),
+                            if (destinationMessage!.isNotEmpty)
+                              Text(
+                                destinationMessage!,
+                                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                              ),
+                          ],
+                        )
+                      : Container(),
                 ),
               ],
             ),
           ),
           if (navigating)
             Center(child: CircularProgressIndicator()), // Loading indicator
-          if (!navigating && !paymentPromptVisible && selectedLocation != null)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: startNavigation,
-                child: Text('Start Navigation'),
-              ),
-            ),
           if (paymentPromptVisible)
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -179,11 +179,8 @@ class _HomePageState extends State<HomePage> {
             label: 'Points',
           ),
         ],
-        currentIndex: 0, // Change this index to navigate
-        onTap: (index) {
-          // Handle navigation between pages if needed
-          // Use a Navigator or a PageController to switch between views
-        },
+        currentIndex: 0,
+        onTap: (index) {},
       ),
     );
   }
@@ -207,33 +204,37 @@ class MapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw roads
-    Paint roadPaint = Paint()..color = Colors.black;
+    Paint roadPaint = Paint()..color = Colors.grey[800]!;
     canvas.drawRect(Rect.fromLTWH(0, size.height * 0.2, size.width, size.height * 0.6), roadPaint);
 
-    // Draw lane dividers
     Paint lanePaint = Paint()..color = Colors.yellow;
     for (double i = 0; i < size.width; i += 40) {
       canvas.drawLine(Offset(i, size.height * 0.5), Offset(i + 20, size.height * 0.5), lanePaint);
     }
 
-    // Draw parking zones as thinner lines
     Paint greenPaint = Paint()..color = Colors.green;
     Paint redPaint = Paint()..color = Colors.red;
 
+    // Draw Parking Zones
     for (var zone in parkingZones) {
       Paint zonePaint = zone.isAvailable ? greenPaint : redPaint;
-      canvas.drawRect(Rect.fromLTWH(zone.x, zone.y, 5, 50), zonePaint); // Thinner parking zones
+      canvas.drawRect(Rect.fromLTWH(zone.x, zone.y, 50, 5), zonePaint);
     }
 
-    // Draw car
+    // Draw Chipotle Location (represented by a circle) at bottom right
+    double chipotleX = size.width - 50; // X coordinate for Chipotle
+    double chipotleY = size.height * 0.8; // Y coordinate for Chipotle
+    Paint chipotlePaint = Paint()..color = Colors.green;
+    canvas.drawCircle(Offset(chipotleX, chipotleY), 15, chipotlePaint); // Draw circle with radius 15
+
+    // Draw the car
     canvas.save();
     canvas.translate(carX, carY);
     canvas.rotate(angle);
     Paint carPaint = Paint()..color = Colors.blue;
-    canvas.drawRect(Rect.fromLTWH(-15, -10, 30, 20), carPaint); // Car body
-    canvas.drawCircle(Offset(-10, 10), 5, Paint()..color = Colors.black); // Left wheel
-    canvas.drawCircle(Offset(10, 10), 5, Paint()..color = Colors.black); // Right wheel
+    canvas.drawRect(Rect.fromLTWH(-15, -10, 30, 20), carPaint);
+    canvas.drawCircle(Offset(-10, 10), 5, Paint()..color = Colors.black);
+    canvas.drawCircle(Offset(10, 10), 5, Paint()..color = Colors.black);
     canvas.restore();
   }
 
@@ -241,5 +242,3 @@ class MapPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
   }
-}
-
