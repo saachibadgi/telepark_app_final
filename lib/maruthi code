@@ -1,1 +1,245 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Telepark',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  double carX = 50; // Starting x position of the car
+  double carY = 300; // Starting y position of the car
+  double angle = 0;
+  bool navigating = false;
+  bool paymentPromptVisible = false;
+
+  List<ParkingZone> parkingZones = [
+    ParkingZone(x: 80, y: 220, isAvailable: true),
+    ParkingZone(x: 150, y: 220, isAvailable: false),
+    ParkingZone(x: 220, y: 220, isAvailable: true),
+    ParkingZone(x: 80, y: 300, isAvailable: false),
+    ParkingZone(x: 150, y: 300, isAvailable: true),
+  ];
+
+  List<String> locations = ['Downtown Boston', 'Back Bay', 'South End'];
+  String? selectedLocation;
+
+  void startNavigation() {
+    setState(() {
+      navigating = true;
+      paymentPromptVisible = false;
+    });
+
+    // Simulate movement to the parking spot over 10-20 seconds
+    Future.delayed(Duration(seconds: 2), () {
+      setState(() {
+        // Move the car to the right across the entire screen
+        carX = 350; // Move across the screen
+      });
+
+      Future.delayed(Duration(seconds: 4), () {
+        setState(() {
+          // Move the car down to the parking spot
+          carX = 350; // Stay in the same x position
+          carY = 220; // Move down to the parking spot
+          angle = 0; // Reset angle
+        });
+
+        Future.delayed(Duration(seconds: 4), () {
+          setState(() {
+            navigating = false;
+            paymentPromptVisible = true;
+          });
+        });
+      });
+    });
+  }
+
+  void payForParking() {
+    // Implement payment logic here
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Payment Successful'),
+        content: Text('You have paid \$2.35 for 2 hours.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Telepark')),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: InputDecoration(
+                labelText: 'Search for a location',
+                border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.search),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  selectedLocation = value;
+                });
+              },
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => SimpleDialog(
+                    title: Text('Select a Location'),
+                    children: locations.map((location) {
+                      return SimpleDialogOption(
+                        onPressed: () {
+                          setState(() {
+                            selectedLocation = location;
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: Text(location),
+                      );
+                    }).toList(),
+                  ),
+                );
+              },
+            ),
+          ),
+          Expanded(
+            child: Stack(
+              children: [
+                CustomPaint(
+                  size: Size(double.infinity, double.infinity),
+                  painter: MapPainter(carX, carY, angle, parkingZones),
+                ),
+                Positioned(
+                  left: 150,
+                  top: 100,
+                  child: Text(
+                    'Downtown Boston',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (navigating)
+            Center(child: CircularProgressIndicator()), // Loading indicator
+          if (!navigating && !paymentPromptVisible && selectedLocation != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: startNavigation,
+                child: Text('Start Navigation'),
+              ),
+            ),
+          if (paymentPromptVisible)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: payForParking,
+                child: Text('Pay Now: \$2.35 for 2 hours'),
+              ),
+            ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.flash_on),
+            label: 'Points',
+          ),
+        ],
+        currentIndex: 0, // Change this index to navigate
+        onTap: (index) {
+          // Handle navigation between pages if needed
+          // Use a Navigator or a PageController to switch between views
+        },
+      ),
+    );
+  }
+}
+
+class ParkingZone {
+  final double x;
+  final double y;
+  final bool isAvailable;
+
+  ParkingZone({required this.x, required this.y, required this.isAvailable});
+}
+
+class MapPainter extends CustomPainter {
+  final double carX;
+  final double carY;
+  final double angle;
+  final List<ParkingZone> parkingZones;
+
+  MapPainter(this.carX, this.carY, this.angle, this.parkingZones);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Draw roads
+    Paint roadPaint = Paint()..color = Colors.black;
+    canvas.drawRect(Rect.fromLTWH(0, size.height * 0.2, size.width, size.height * 0.6), roadPaint);
+
+    // Draw lane dividers
+    Paint lanePaint = Paint()..color = Colors.yellow;
+    for (double i = 0; i < size.width; i += 40) {
+      canvas.drawLine(Offset(i, size.height * 0.5), Offset(i + 20, size.height * 0.5), lanePaint);
+    }
+
+    // Draw parking zones as thinner lines
+    Paint greenPaint = Paint()..color = Colors.green;
+    Paint redPaint = Paint()..color = Colors.red;
+
+    for (var zone in parkingZones) {
+      Paint zonePaint = zone.isAvailable ? greenPaint : redPaint;
+      canvas.drawRect(Rect.fromLTWH(zone.x, zone.y, 5, 50), zonePaint); // Thinner parking zones
+    }
+
+    // Draw car
+    canvas.save();
+    canvas.translate(carX, carY);
+    canvas.rotate(angle);
+    Paint carPaint = Paint()..color = Colors.blue;
+    canvas.drawRect(Rect.fromLTWH(-15, -10, 30, 20), carPaint); // Car body
+    canvas.drawCircle(Offset(-10, 10), 5, Paint()..color = Colors.black); // Left wheel
+    canvas.drawCircle(Offset(10, 10), 5, Paint()..color = Colors.black); // Right wheel
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
+}
 
