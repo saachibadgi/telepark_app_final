@@ -1,147 +1,431 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
-import 'sign_in_page.dart'; // Import the SignInPage
-import 'account_page.dart';  // Import your AccountPage file
+import 'dart:async';
 
-import 'package:firebase_core/firebase_core.dart';
-
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-
-void main() async{
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();  // Initialize Firebase
-
-  runApp( MyApp());
+void main() {
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const AccountPage(),  // Set AccountPage as the home page
-      debugShowCheckedModeBanner: false,  // Remove the debug banner
+      title: 'Telepark',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: HomePage(),
     );
-    /*MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        // "flutter run" has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      // home: //SignInPage(), // const // MyHomePage(title: 'Flutter Demo Home Page'),
-        home:  const MyHomePage(title: 'Flutter Demo Home Page'),
-    );*/
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class HomePage extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _HomePageState createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomePageState extends State<HomePage> {
+  double carX = 150; // Starting x position of the car
+  double carY = 175; // Starting y position of the car
+  double angle = 0;
+  bool navigating = false;
+  bool paymentPromptVisible = false; // New flag to show Pay Now button
+  String? destinationMessage = '';
 
-  void _incrementCounter() {
+  List<ParkingZone> parkingZones = [
+    ParkingZone(x: 100, y: 450, isAvailable: true),
+    ParkingZone(x: 200, y: 450, isAvailable: false),
+    ParkingZone(x: 300, y: 450, isAvailable: true),
+    ParkingZone(x: 400, y: 200, isAvailable: false),
+    ParkingZone(x: 500, y: 200, isAvailable: true),
+  ];
+
+  String searchQuery = '';
+  String? selectedLocation = '';
+  int currentIndex = 0; // Track the selected bottom navigation index
+
+  void startNavigation() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      navigating = true;
+      destinationMessage = '';
     });
+
+    int step = 0;
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (step < 10) {
+          // Move down towards Chipotle
+          carY += 25; // Adjust the value based on how much movement you want per second
+        } else if (step < 15) {
+          // Move right towards Chipotle
+          carX += 90; // Adjust the value to simulate moving to the right
+        } else if (step < 20) {
+          // Move up to park above Chipotle
+          carY += 5; // Continue moving up
+        }
+
+        // End navigation after 20 seconds
+        if (step == 19) {
+          navigating = false;
+          destinationMessage = 'Location Reached!';
+          paymentPromptVisible = true; // Show the "Pay Now" button when location is reached
+          timer.cancel();
+        }
+
+        // Prevent the car from going below the Y coordinate of the parking meters
+        if (carY < 200) {
+          carY = 200; // Stop at the height of parking meters
+        }
+
+        step++;
+      });
+    });
+  }
+
+  // Function to simulate payment
+  void payForParking() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Payment Successful'),
+        content: Text('You have paid \$2.35 for 2 hours.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+    setState(() {
+      paymentPromptVisible = false; // Hide the "Pay Now" button after payment
+    });
+  }
+
+  void onBottomNavTapped(int index) {
+    setState(() {
+      currentIndex = index;
+    });
+    if (index == 1) {
+      // Navigate to Profile Page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AccountPage()),
+      );
+    } else if (index == 2) {
+      // Navigate to Points Page when lightning button is tapped
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PointsPage()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      appBar: AppBar(title: Text('Telepark')),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: InputDecoration(
+                labelText: 'Search for a location',
+                border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.search),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                  selectedLocation = (value.toLowerCase().contains('chipotle')) ? "255 Main St, Cambridge, MA 02142" : null;
+                });
+              },
+            ),
+          ),
+          if (selectedLocation != null && !navigating)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: startNavigation,
+                child: Text('Start Navigation'),
+              ),
+            ),
+          Expanded(
+            child: Stack(
+              children: [
+                CustomPaint(
+                  size: Size(double.infinity, double.infinity),
+                  painter: MapPainter(carX, carY, angle, parkingZones),
+                ),
+                Positioned(
+                  left: 350,
+                  top: 50,
+                  child: selectedLocation != null
+                      ? Column(
+                          children: [
+                            Text(
+                              'Chipotle: $selectedLocation',
+                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                            ),
+                            if (destinationMessage!.isNotEmpty)
+                              Text(
+                                destinationMessage!,
+                                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                              ),
+                          ],
+                        )
+                      : Container(),
+                ),
+              ],
+            ),
+          ),
+          if (navigating)
+            Center(child: CircularProgressIndicator()), // Loading indicator
+          if (paymentPromptVisible)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: payForParking,
+                child: Text('Pay Now: \$2.35 for 2 hours'),
+              ),
+            ),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.flash_on),
+            label: 'Points', // Lightning Button
+          ),
+        ],
+        currentIndex: currentIndex,
+        onTap: onBottomNavTapped,
+      ),
+    );
+  }
+}
+
+class ParkingZone {
+  final double x;
+  final double y;
+  final bool isAvailable;
+
+  ParkingZone({required this.x, required this.y, required this.isAvailable});
+}
+
+class MapPainter extends CustomPainter {
+  final double carX;
+  final double carY;
+  final double angle;
+  final List<ParkingZone> parkingZones;
+
+  MapPainter(this.carX, this.carY, this.angle, this.parkingZones);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint roadPaint = Paint()..color = Colors.grey[800]!;
+    canvas.drawRect(Rect.fromLTWH(0, size.height * 0.2, size.width, size.height * 0.6), roadPaint);
+
+    Paint lanePaint = Paint()..color = Colors.yellow;
+    for (double i = 0; i < size.width; i += 40) {
+      canvas.drawLine(Offset(i, size.height * 0.5), Offset(i + 20, size.height * 0.5), lanePaint);
+    }
+
+    Paint greenPaint = Paint()..color = Colors.green;
+    Paint redPaint = Paint()..color = Colors.red;
+
+    // Draw Parking Zones
+    for (var zone in parkingZones) {
+      Paint zonePaint = zone.isAvailable ? greenPaint : redPaint;
+      canvas.drawRect(Rect.fromLTWH(zone.x, zone.y, 50, 5), zonePaint);
+    }
+
+    // Draw Chipotle Location (represented by a circle) at bottom right
+    double chipotleX = size.width - 50; // X coordinate for Chipotle
+    double chipotleY = size.height * 0.8; // Y coordinate for Chipotle
+    Paint chipotlePaint = Paint()..color = Colors.green;
+    canvas.drawCircle(Offset(chipotleX, chipotleY), 15, chipotlePaint); // Draw circle with radius 15
+
+    // Draw the car
+    canvas.save();
+    canvas.translate(carX, carY);
+    canvas.rotate(angle);
+    Paint carPaint = Paint()..color = Colors.blue;
+    canvas.drawRect(Rect.fromLTWH(-15, -10, 30, 20), carPaint);
+    canvas.drawCircle(Offset(-10, 10), 5, Paint()..color = Colors.black);
+    canvas.drawCircle(Offset(10, 10), 5, Paint()..color = Colors.black);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
+}
+
+// Profile and Points pages remain unchanged
+class AccountPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Account Page')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('User Information', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            Text('Name: John Doe', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 10),
+            Text('Email: johndoe@email.com', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 10),
+            Text('Phone Number: +1234567890', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 10),
+            Text('Car Model: Tesla Model 3', style: TextStyle(fontSize: 18)),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class PointsPage extends StatefulWidget {
+  @override
+  _PointsPageState createState() => _PointsPageState();
+}
+
+class _PointsPageState extends State<PointsPage> {
+  int points = 500; // User starts with 500 points
+  bool isRedeemed = false;
+
+  // Method to handle redemption
+  void redeem(int cost) {
+    if (points >= cost) {
+      setState(() {
+        points -= cost;
+        isRedeemed = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Redeemed!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Not enough points to redeem!')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Icon(Icons.flash_on, color: Colors.blue),
+            SizedBox(width: 5),
+            Text(
+              '$points Points',
+              style: TextStyle(
+                color: Colors.blueAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.black,
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Points',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10.0,
+                mainAxisSpacing: 10.0,
+              ),
+              itemCount: 4,
+              padding: const EdgeInsets.all(16.0),
+              itemBuilder: (BuildContext context, int index) {
+                // Define different options for the four cards
+                List<int> pointCosts = [500, 1000, 2000, 4000];
+                List<String> timeDurations = [
+                  '2 hours -- FREE parking',
+                  '4 hours -- FREE parking',
+                  '8 hours -- FREE parking',
+                  '16 hours -- FREE parking'
+                ];
+
+                // Color based on index
+                Color cardColor = index == 0
+                    ? Colors.lightGreenAccent
+                    : Colors.lightBlueAccent;
+
+                return GestureDetector(
+                  onTap: !isRedeemed && points >= pointCosts[index]
+                      ? () => redeem(pointCosts[index])
+                      : null,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isRedeemed && index == 0
+                          ? Colors.grey
+                          : cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.electric_car, // Updated icon
+                          size: 50,
+                          color: Colors.blueAccent,
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          '${pointCosts[index]} points',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          timeDurations[index],
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
