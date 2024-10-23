@@ -1,21 +1,309 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 void main() {
-  runApp(PointsApp());
+  runApp(MyApp());
 }
 
-class PointsApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: PointsPage(),
+      title: 'Telepark',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: HomePage(),
     );
   }
 }
 
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  double carX = 150; // Starting x position of the car
+  double carY = 175; // Starting y position of the car
+  double angle = 0;
+  bool navigating = false;
+  bool paymentPromptVisible = false;
+  String? destinationMessage = '';
+
+  List<ParkingZone> parkingZones = [
+    ParkingZone(x: 100, y: 450, isAvailable: true),
+    ParkingZone(x: 200, y: 450, isAvailable: false),
+    ParkingZone(x: 300, y: 450, isAvailable: true),
+    ParkingZone(x: 400, y: 200, isAvailable: false),
+    ParkingZone(x: 500, y: 200, isAvailable: true),
+  ];
+
+  String searchQuery = '';
+  String? selectedLocation = '';
+  int currentIndex = 0; // Track the selected bottom navigation index
+
+  void startNavigation() {
+    setState(() {
+      navigating = true;
+      destinationMessage = '';
+    });
+
+    int step = 0;
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (step < 10) {
+          // Move down towards Chipotle
+          carY += 25; // Adjust the value based on how much movement you want per second
+        } else if (step < 15) {
+          // Move right towards Chipotle
+          carX += 90; // Adjust the value to simulate moving to the right
+        } else if (step < 20) {
+          // Move up to park above Chipotle
+          carY += 5; // Continue moving up
+        }
+
+        // End navigation after 20 seconds
+        if (step == 19) {
+          navigating = false;
+          destinationMessage = 'Location Reached!';
+          timer.cancel();
+        }
+
+        // Prevent the car from going below the Y coordinate of the parking meters
+        if (carY < 200) {
+          carY = 200; // Stop at the height of parking meters
+        }
+
+        step++;
+      });
+    });
+  }
+
+  void payForParking() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Payment Successful'),
+        content: Text('You have paid \$2.35 for 2 hours.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void onBottomNavTapped(int index) {
+    setState(() {
+      currentIndex = index;
+    });
+    if (index == 1) {
+      // Navigate to Profile Page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AccountPage()),
+      );
+    } else if (index == 2) {
+      // Navigate to Points Page when lightning button is tapped
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PointsPage()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Telepark')),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: InputDecoration(
+                labelText: 'Search for a location',
+                border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.search),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                  selectedLocation = (value.toLowerCase().contains('chipotle')) ? "255 Main St, Cambridge, MA 02142" : null;
+                });
+              },
+            ),
+          ),
+          if (selectedLocation != null && !navigating)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: startNavigation,
+                child: Text('Start Navigation'),
+              ),
+            ),
+          Expanded(
+            child: Stack(
+              children: [
+                CustomPaint(
+                  size: Size(double.infinity, double.infinity),
+                  painter: MapPainter(carX, carY, angle, parkingZones),
+                ),
+                Positioned(
+                  left: 350,
+                  top: 50,
+                  child: selectedLocation != null
+                      ? Column(
+                          children: [
+                            Text(
+                              'Chipotle: $selectedLocation',
+                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                            ),
+                            if (destinationMessage!.isNotEmpty)
+                              Text(
+                                destinationMessage!,
+                                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                              ),
+                          ],
+                        )
+                      : Container(),
+                ),
+              ],
+            ),
+          ),
+          if (navigating)
+            Center(child: CircularProgressIndicator()), // Loading indicator
+          if (paymentPromptVisible)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: payForParking,
+                child: Text('Pay Now: \$2.35 for 2 hours'),
+              ),
+            ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.flash_on),
+            label: 'Points', // Lightning Button
+          ),
+        ],
+        currentIndex: currentIndex,
+        onTap: onBottomNavTapped,
+      ),
+    );
+  }
+}
+
+class ParkingZone {
+  final double x;
+  final double y;
+  final bool isAvailable;
+
+  ParkingZone({required this.x, required this.y, required this.isAvailable});
+}
+
+class MapPainter extends CustomPainter {
+  final double carX;
+  final double carY;
+  final double angle;
+  final List<ParkingZone> parkingZones;
+
+  MapPainter(this.carX, this.carY, this.angle, this.parkingZones);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint roadPaint = Paint()..color = Colors.grey[800]!;
+    canvas.drawRect(Rect.fromLTWH(0, size.height * 0.2, size.width, size.height * 0.6), roadPaint);
+
+    Paint lanePaint = Paint()..color = Colors.yellow;
+    for (double i = 0; i < size.width; i += 40) {
+      canvas.drawLine(Offset(i, size.height * 0.5), Offset(i + 20, size.height * 0.5), lanePaint);
+    }
+
+    Paint greenPaint = Paint()..color = Colors.green;
+    Paint redPaint = Paint()..color = Colors.red;
+
+    // Draw Parking Zones
+    for (var zone in parkingZones) {
+      Paint zonePaint = zone.isAvailable ? greenPaint : redPaint;
+      canvas.drawRect(Rect.fromLTWH(zone.x, zone.y, 50, 5), zonePaint);
+    }
+
+    // Draw Chipotle Location (represented by a circle) at bottom right
+    double chipotleX = size.width - 50; // X coordinate for Chipotle
+    double chipotleY = size.height * 0.8; // Y coordinate for Chipotle
+    Paint chipotlePaint = Paint()..color = Colors.green;
+    canvas.drawCircle(Offset(chipotleX, chipotleY), 15, chipotlePaint); // Draw circle with radius 15
+
+    // Draw the car
+    canvas.save();
+    canvas.translate(carX, carY);
+    canvas.rotate(angle);
+    Paint carPaint = Paint()..color = Colors.blue;
+    canvas.drawRect(Rect.fromLTWH(-15, -10, 30, 20), carPaint);
+    canvas.drawCircle(Offset(-10, 10), 5, Paint()..color = Colors.black);
+    canvas.drawCircle(Offset(10, 10), 5, Paint()..color = Colors.black);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
+}
+
+// Account Page Class
+class AccountPage extends StatefulWidget {
+  const AccountPage({Key? key}) : super(key: key);
+
+  @override
+  _AccountPageState createState() => _AccountPageState();
+}
+
+class _AccountPageState extends State<AccountPage> {
+  String userName = 'John Doe';
+  String email = 'john.doe@example.com';
+  String phoneNumber = '+1234567890';
+  String carModel = 'Tesla Model 3';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Account Page')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('User Information', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            Text('Name: $userName', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 10),
+            Text('Email: $email', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 10),
+            Text('Phone Number: $phoneNumber', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 10),
+            Text('Car Model: $carModel', style: TextStyle(fontSize: 18)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// PointsPage Class
 class PointsPage extends StatefulWidget {
   @override
   _PointsPageState createState() => _PointsPageState();
@@ -25,7 +313,6 @@ class _PointsPageState extends State<PointsPage> {
   int points = 500; // User starts with 500 points
   bool isRedeemed = false;
 
-  // Method to handle redemption
   void redeem(int cost) {
     if (points >= cost) {
       setState(() {
@@ -52,11 +339,7 @@ class _PointsPageState extends State<PointsPage> {
             SizedBox(width: 5),
             Text(
               '$points Points',
-              style: TextStyle(
-                color: Colors.blueAccent,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+              style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
         ),
@@ -69,11 +352,7 @@ class _PointsPageState extends State<PointsPage> {
             padding: const EdgeInsets.all(16.0),
             child: Text(
               'Points',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
             ),
           ),
           Expanded(
@@ -86,7 +365,6 @@ class _PointsPageState extends State<PointsPage> {
               itemCount: 4,
               padding: const EdgeInsets.all(16.0),
               itemBuilder: (BuildContext context, int index) {
-                // Define different options for the four cards
                 List<int> pointCosts = [500, 1000, 2000, 4000];
                 List<String> timeDurations = [
                   '2 hours -- FREE parking',
@@ -95,47 +373,29 @@ class _PointsPageState extends State<PointsPage> {
                   '16 hours -- FREE parking'
                 ];
 
-                // Color based on index
-                Color cardColor = index == 0
-                    ? Colors.lightGreenAccent
-                    : Colors.lightBlueAccent;
+                Color cardColor = index == 0 ? Colors.lightGreenAccent : Colors.lightBlueAccent;
 
                 return GestureDetector(
-                  onTap: !isRedeemed && points >= pointCosts[index]
-                      ? () => redeem(pointCosts[index])
-                      : null,
+                  onTap: !isRedeemed && points >= pointCosts[index] ? () => redeem(pointCosts[index]) : null,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isRedeemed && index == 0
-                          ? Colors.grey
-                          : cardColor,
+                      color: isRedeemed && index == 0 ? Colors.grey : cardColor,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.electric_car, // Updated icon
-                          size: 50,
-                          color: Colors.blueAccent,
-                        ),
+                        Icon(Icons.electric_car, size: 50, color: Colors.blueAccent),
                         SizedBox(height: 10),
                         Text(
                           '${pointCosts[index]} points',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueAccent,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
                         ),
                         SizedBox(height: 5),
                         Text(
                           timeDurations[index],
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.blueGrey,
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.blueGrey),
                         ),
                       ],
                     ),
