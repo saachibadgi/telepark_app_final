@@ -104,6 +104,12 @@ class _HomePageState extends State<HomePage> {
         context,
         MaterialPageRoute(builder: (context) => AccountPage()),
       );
+    } else if (index == 2) {
+      // Navigate to Points Page when lightning button is tapped
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PointsPage()),
+      );
     }
   }
 
@@ -190,7 +196,7 @@ class _HomePageState extends State<HomePage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.flash_on),
-            label: 'Points',
+            label: 'Points', // Lightning Button
           ),
         ],
         currentIndex: currentIndex,
@@ -267,84 +273,138 @@ class AccountPage extends StatefulWidget {
 }
 
 class _AccountPageState extends State<AccountPage> {
-  // Text editing controllers to manage text input fields
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
-
-  // Form key to validate form fields
-  final _formKey = GlobalKey<FormState>();
+  String userName = 'John Doe';
+  String email = 'john.doe@example.com';
+  String phoneNumber = '+1234567890';
+  String carModel = 'Tesla Model 3';
 
   @override
-  void initState() {
-    super.initState();
-    // Pre-fill the fields with some assumed initial data
-    _nameController.text = "John Doe";
-    _emailController.text = "john.doe@example.com";
-    _phoneController.text = "123-456-7890";
-    _usernameController.text = "johndoe";
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Account Page')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('User Information', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            Text('Name: $userName', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 10),
+            Text('Email: $email', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 10),
+            Text('Phone Number: $phoneNumber', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 10),
+            Text('Car Model: $carModel', style: TextStyle(fontSize: 18)),
+          ],
+        ),
+      ),
+    );
   }
+}
 
+// PointsPage Class
+class PointsPage extends StatefulWidget {
   @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    _usernameController.dispose();
-    super.dispose();
-  }
+  _PointsPageState createState() => _PointsPageState();
+}
 
-  // Function to handle the form submission
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      // Perform your submission logic here
-      print("Name: ${_nameController.text}");
-      print("Email: ${_emailController.text}");
-      print("Phone: ${_phoneController.text}");
-      print("Username: ${_usernameController.text}");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile updated successfully!')));
+class _PointsPageState extends State<PointsPage> {
+  int points = 500; // User starts with 500 points
+  bool isRedeemed = false;
+
+  void redeem(int cost) {
+    if (points >= cost) {
+      setState(() {
+        points -= cost;
+        isRedeemed = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Redeemed!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Not enough points to redeem!')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Account Profile')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Name'),
-                validator: (value) => value!.isEmpty ? 'Please enter your name' : null,
-              ),
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(labelText: 'Email'),
-                validator: (value) => value!.isEmpty ? 'Please enter your email' : null,
-              ),
-              TextFormField(
-                controller: _phoneController,
-                decoration: InputDecoration(labelText: 'Phone Number'),
-                validator: (value) => value!.isEmpty ? 'Please enter your phone number' : null,
-              ),
-              TextFormField(
-                controller: _usernameController,
-                decoration: InputDecoration(labelText: 'Username'),
-                validator: (value) => value!.isEmpty ? 'Please enter a username' : null,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submitForm,
-                child: Text('Update Profile'),
-              ),
-            ],
-          ),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Icon(Icons.flash_on, color: Colors.blue),
+            SizedBox(width: 5),
+            Text(
+              '$points Points',
+              style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ],
         ),
+        backgroundColor: Colors.black,
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Points',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+            ),
+          ),
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10.0,
+                mainAxisSpacing: 10.0,
+              ),
+              itemCount: 4,
+              padding: const EdgeInsets.all(16.0),
+              itemBuilder: (BuildContext context, int index) {
+                List<int> pointCosts = [500, 1000, 2000, 4000];
+                List<String> timeDurations = [
+                  '2 hours -- FREE parking',
+                  '4 hours -- FREE parking',
+                  '8 hours -- FREE parking',
+                  '16 hours -- FREE parking'
+                ];
+
+                Color cardColor = index == 0 ? Colors.lightGreenAccent : Colors.lightBlueAccent;
+
+                return GestureDetector(
+                  onTap: !isRedeemed && points >= pointCosts[index] ? () => redeem(pointCosts[index]) : null,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isRedeemed && index == 0 ? Colors.grey : cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.electric_car, size: 50, color: Colors.blueAccent),
+                        SizedBox(height: 10),
+                        Text(
+                          '${pointCosts[index]} points',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          timeDurations[index],
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 14, color: Colors.blueGrey),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
