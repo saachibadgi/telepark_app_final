@@ -39,6 +39,7 @@ class _HomePageState extends State<HomePage> {
 
   String searchQuery = '';
   String? selectedLocation = '';
+  int currentIndex = 0; // Track the selected bottom navigation index
 
   void startNavigation() {
     setState(() {
@@ -91,6 +92,19 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+  }
+
+  void onBottomNavTapped(int index) {
+    setState(() {
+      currentIndex = index;
+    });
+    if (index == 1) {
+      // Navigate to Profile Page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AccountPage()),
+      );
+    }
   }
 
   @override
@@ -179,8 +193,8 @@ class _HomePageState extends State<HomePage> {
             label: 'Points',
           ),
         ],
-        currentIndex: 0,
-        onTap: (index) {},
+        currentIndex: currentIndex,
+        onTap: onBottomNavTapped,
       ),
     );
   }
@@ -242,3 +256,96 @@ class MapPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
   }
+}
+
+// Account Page Class
+class AccountPage extends StatefulWidget {
+  const AccountPage({Key? key}) : super(key: key);
+
+  @override
+  _AccountPageState createState() => _AccountPageState();
+}
+
+class _AccountPageState extends State<AccountPage> {
+  // Text editing controllers to manage text input fields
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+
+  // Form key to validate form fields
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill the fields with some assumed initial data
+    _nameController.text = "John Doe";
+    _emailController.text = "john.doe@example.com";
+    _phoneController.text = "123-456-7890";
+    _usernameController.text = "johndoe";
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _usernameController.dispose();
+    super.dispose();
+  }
+
+  // Function to handle the form submission
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      // Perform your submission logic here
+      print("Name: ${_nameController.text}");
+      print("Email: ${_emailController.text}");
+      print("Phone: ${_phoneController.text}");
+      print("Username: ${_usernameController.text}");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile updated successfully!')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Account Profile')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Name'),
+                validator: (value) => value!.isEmpty ? 'Please enter your name' : null,
+              ),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(labelText: 'Email'),
+                validator: (value) => value!.isEmpty ? 'Please enter your email' : null,
+              ),
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(labelText: 'Phone Number'),
+                validator: (value) => value!.isEmpty ? 'Please enter your phone number' : null,
+              ),
+              TextFormField(
+                controller: _usernameController,
+                decoration: InputDecoration(labelText: 'Username'),
+                validator: (value) => value!.isEmpty ? 'Please enter a username' : null,
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _submitForm,
+                child: Text('Update Profile'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
