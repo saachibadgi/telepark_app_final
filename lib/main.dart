@@ -32,11 +32,11 @@ class _HomePageState extends State<HomePage> {
   String? destinationMessage = '';
 
   List<ParkingZone> parkingZones = [
-    ParkingZone(x: 100, y: 450, isAvailable: true),
-    ParkingZone(x: 200, y: 450, isAvailable: false),
-    ParkingZone(x: 300, y: 450, isAvailable: true),
-    ParkingZone(x: 400, y: 200, isAvailable: false),
-    ParkingZone(x: 500, y: 200, isAvailable: true),
+    ParkingZone(x: 100, y: 500, isAvailable: true),
+    ParkingZone(x: 200, y: 500, isAvailable: false),
+    ParkingZone(x: 300, y: 500, isAvailable: true),
+    ParkingZone(x: 400, y: 150, isAvailable: false),
+    ParkingZone(x: 500, y: 150, isAvailable: true),
   ];
 
   String searchQuery = '';
@@ -60,7 +60,7 @@ class _HomePageState extends State<HomePage> {
           carX += 90; // Adjust the value to simulate moving to the right
         } else if (step < 20) {
           // Move up to park above Chipotle
-          carY += 5; // Continue moving up
+          carY += 10; // Continue moving up
         }
 
         // End navigation after 20 seconds
@@ -154,7 +154,7 @@ class _HomePageState extends State<HomePage> {
                       ? Column(
                     children: [
                       Text(
-                        'Chipotle: $selectedLocation',
+                        ' $selectedLocation',
                         style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                       ),
                       if (destinationMessage!.isNotEmpty)
@@ -226,7 +226,7 @@ class MapPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, size.height * 0.2, size.width, size.height * 0.6), roadPaint);
 
     Paint lanePaint = Paint()..color = Colors.yellow;
-    for (double i = 0; i < size.width; i += 40) {
+    for (double i = 250; i < size.width; i += 40) {
       canvas.drawLine(Offset(i, size.height * 0.5), Offset(i + 20, size.height * 0.5), lanePaint);
     }
 
