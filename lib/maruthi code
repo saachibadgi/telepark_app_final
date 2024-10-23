@@ -26,7 +26,7 @@ class _HomePageState extends State<HomePage> {
   double carY = 175; // Starting y position of the car
   double angle = 0;
   bool navigating = false;
-  bool paymentPromptVisible = false;
+  bool paymentPromptVisible = false; // New flag to show Pay Now button
   String? destinationMessage = '';
 
   List<ParkingZone> parkingZones = [
@@ -65,6 +65,7 @@ class _HomePageState extends State<HomePage> {
         if (step == 19) {
           navigating = false;
           destinationMessage = 'Location Reached!';
+          paymentPromptVisible = true; // Show the "Pay Now" button when location is reached
           timer.cancel();
         }
 
@@ -78,6 +79,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Function to simulate payment
   void payForParking() {
     showDialog(
       context: context,
@@ -92,6 +94,9 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+    setState(() {
+      paymentPromptVisible = false; // Hide the "Pay Now" button after payment
+    });
   }
 
   void onBottomNavTapped(int index) {
@@ -264,20 +269,8 @@ class MapPainter extends CustomPainter {
   }
 }
 
-// Account Page Class
-class AccountPage extends StatefulWidget {
-  const AccountPage({Key? key}) : super(key: key);
-
-  @override
-  _AccountPageState createState() => _AccountPageState();
-}
-
-class _AccountPageState extends State<AccountPage> {
-  String userName = 'John Doe';
-  String email = 'john.doe@example.com';
-  String phoneNumber = '+1234567890';
-  String carModel = 'Tesla Model 3';
-
+// Profile and Points pages remain unchanged
+class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -289,13 +282,13 @@ class _AccountPageState extends State<AccountPage> {
           children: [
             Text('User Information', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             SizedBox(height: 20),
-            Text('Name: $userName', style: TextStyle(fontSize: 18)),
+            Text('Name: John Doe', style: TextStyle(fontSize: 18)),
             SizedBox(height: 10),
-            Text('Email: $email', style: TextStyle(fontSize: 18)),
+            Text('Email: johndoe@email.com', style: TextStyle(fontSize: 18)),
             SizedBox(height: 10),
-            Text('Phone Number: $phoneNumber', style: TextStyle(fontSize: 18)),
+            Text('Phone Number: +1234567890', style: TextStyle(fontSize: 18)),
             SizedBox(height: 10),
-            Text('Car Model: $carModel', style: TextStyle(fontSize: 18)),
+            Text('Car Model: Tesla Model 3', style: TextStyle(fontSize: 18)),
           ],
         ),
       ),
@@ -303,7 +296,6 @@ class _AccountPageState extends State<AccountPage> {
   }
 }
 
-// PointsPage Class
 class PointsPage extends StatefulWidget {
   @override
   _PointsPageState createState() => _PointsPageState();
@@ -313,6 +305,7 @@ class _PointsPageState extends State<PointsPage> {
   int points = 500; // User starts with 500 points
   bool isRedeemed = false;
 
+  // Method to handle redemption
   void redeem(int cost) {
     if (points >= cost) {
       setState(() {
@@ -339,7 +332,11 @@ class _PointsPageState extends State<PointsPage> {
             SizedBox(width: 5),
             Text(
               '$points Points',
-              style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(
+                color: Colors.blueAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
           ],
         ),
@@ -352,7 +349,11 @@ class _PointsPageState extends State<PointsPage> {
             padding: const EdgeInsets.all(16.0),
             child: Text(
               'Points',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
           ),
           Expanded(
@@ -365,6 +366,7 @@ class _PointsPageState extends State<PointsPage> {
               itemCount: 4,
               padding: const EdgeInsets.all(16.0),
               itemBuilder: (BuildContext context, int index) {
+                // Define different options for the four cards
                 List<int> pointCosts = [500, 1000, 2000, 4000];
                 List<String> timeDurations = [
                   '2 hours -- FREE parking',
@@ -373,29 +375,47 @@ class _PointsPageState extends State<PointsPage> {
                   '16 hours -- FREE parking'
                 ];
 
-                Color cardColor = index == 0 ? Colors.lightGreenAccent : Colors.lightBlueAccent;
+                // Color based on index
+                Color cardColor = index == 0
+                    ? Colors.lightGreenAccent
+                    : Colors.lightBlueAccent;
 
                 return GestureDetector(
-                  onTap: !isRedeemed && points >= pointCosts[index] ? () => redeem(pointCosts[index]) : null,
+                  onTap: !isRedeemed && points >= pointCosts[index]
+                      ? () => redeem(pointCosts[index])
+                      : null,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isRedeemed && index == 0 ? Colors.grey : cardColor,
+                      color: isRedeemed && index == 0
+                          ? Colors.grey
+                          : cardColor,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.electric_car, size: 50, color: Colors.blueAccent),
+                        Icon(
+                          Icons.electric_car, // Updated icon
+                          size: 50,
+                          color: Colors.blueAccent,
+                        ),
                         SizedBox(height: 10),
                         Text(
                           '${pointCosts[index]} points',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent,
+                          ),
                         ),
                         SizedBox(height: 5),
                         Text(
                           timeDurations[index],
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 14, color: Colors.blueGrey),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.blueGrey,
+                          ),
                         ),
                       ],
                     ),
