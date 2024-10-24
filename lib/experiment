@@ -1,0 +1,280 @@
+import 'package:flutter/material.dart';
+import 'dart:async';
+
+void main() {
+  runApp(ParkingApp());
+}
+
+class ParkingApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Parking Payment',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        fontFamily: 'Roboto',
+      ),
+      home: ParkingPaymentScreen(),
+    );
+  }
+}
+
+class ParkingPaymentScreen extends StatefulWidget {
+  @override
+  _ParkingPaymentScreenState createState() => _ParkingPaymentScreenState();
+}
+
+class _ParkingPaymentScreenState extends State<ParkingPaymentScreen> {
+  double ratePerHour = 3.0; // Parking rate per hour
+  int parkingHours = 1; // User input for parking hours
+  double totalAmount = 3.0; // Total amount to be charged
+  int userPoints = 0;
+  int points = 0; // Total earned points for leaving early
+  Timer? countdownTimer;
+  Duration remainingTime = Duration(); // Time left based on user input
+  bool isPaid = false;
+
+  // Function to start the countdown after payment is made
+  void startCountdown() {
+    countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (remainingTime.inSeconds > 0) {
+          remainingTime = remainingTime - Duration(seconds: 1);
+        } else {
+          countdownTimer?.cancel();
+        }
+      });
+    });
+  }
+
+  // Function to simulate leaving early and adding points
+  void leaveEarly() {
+    if (countdownTimer != null) {
+      countdownTimer?.cancel();
+    }
+
+    // Calculate time left and convert to hours for point calculation
+    double hoursLeft = remainingTime.inMinutes / 60;
+    int pointsEarned = (hoursLeft * 100).round();
+
+    setState(() {
+      userPoints += pointsEarned;
+      points += pointsEarned; // Accumulate points in the new variable
+      remainingTime = Duration.zero;
+      totalAmount = 0; // Parking session ends
+    });
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Parking Ended'),
+          content: Text('You earned $pointsEarned points for leaving early!'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to extend parking time
+  void extendTime() {
+    setState(() {
+      parkingHours += 1; // Add an hour to the parking time
+      remainingTime += Duration(hours: 1); // Add 1 hour to the remaining time
+      totalAmount += ratePerHour; // Charge $3 per hour for extended time
+    });
+
+    // Payment dialog for extended time
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Extend Time'),
+          content: Text('You need to pay \$${ratePerHour.toStringAsFixed(2)} for extending by 1 hour.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Pay Now'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Payment function after entering hours and clicking pay
+  void payNow() {
+    setState(() {
+      totalAmount = ratePerHour * parkingHours; // Calculate total based on input hours
+      remainingTime = Duration(hours: parkingHours); // Set countdown timer duration
+      isPaid = true; // Set payment as successful
+      startCountdown(); // Start the countdown timer
+    });
+
+    // Payment success popup
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Payment Successful'),
+          content: Text('You have paid \$${totalAmount.toStringAsFixed(2)} for $parkingHours hour(s) of parking.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Parking Payment'),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Parking Icon
+              Icon(Icons.local_parking, size: 100, color: Colors.blueAccent),
+              SizedBox(height: 20),
+
+              // Input for number of parking hours
+              Text(
+                'Enter Hours to Park:',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.remove_circle, color: Colors.red),
+                    onPressed: () {
+                      if (parkingHours > 1) {
+                        setState(() {
+                          parkingHours--;
+                          totalAmount = ratePerHour * parkingHours;
+                        });
+                      }
+                    },
+                  ),
+                  Text(
+                    '$parkingHours hour(s)',
+                    style: TextStyle(fontSize: 18, color: Colors.black),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.add_circle, color: Colors.green),
+                    onPressed: () {
+                      setState(() {
+                        parkingHours++;
+                        totalAmount = ratePerHour * parkingHours;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+
+              // Total payment amount
+              Text(
+                'Total Amount Due',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '\$${totalAmount.toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.green),
+              ),
+              SizedBox(height: 20),
+
+              // Display parking time left (after payment)
+              if (isPaid)
+                Text(
+                  'Parking Time Left: ${(remainingTime.inMinutes).toString()} minutes',
+                  style: TextStyle(fontSize: 18, color: Colors.black54),
+                ),
+              SizedBox(height: 40),
+
+              // Pay Now button (if payment has not been made)
+              if (!isPaid)
+                ElevatedButton(
+                  onPressed: payNow,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 40.0),
+                    child: Text('Pay Now', style: TextStyle(fontSize: 20)),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+              SizedBox(height: 20),
+
+              // Extend Time Button (shown after payment is successful)
+              if (isPaid)
+                ElevatedButton(
+                  onPressed: extendTime,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 40.0),
+                    child: Text('Extend Time', style: TextStyle(fontSize: 20)),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.orange,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+              SizedBox(height: 20),
+
+              // Leave Early Button (shown after payment is successful)
+              if (isPaid)
+                ElevatedButton(
+                  onPressed: leaveEarly,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 40.0),
+                    child: Text('Leave Early', style: TextStyle(fontSize: 20)),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.redAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+              SizedBox(height: 40),
+
+              // Show total points earned from leaving early
+              Text(
+                'Total Points Earned: $points',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
